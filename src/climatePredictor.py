@@ -17,7 +17,7 @@ print(climateChangeDf.head())
 
 #%%
 #Choosing features from data
-features_considered = ['LandAverageTemperature', 'LandAverageTemperatureUncertainty']
+features_considered = ['LandAverageTemperature', 'LandMaxTemperature', 'LandMinTemperature']
 features = climateChangeDf[features_considered]
 features.index = climateChangeDf['dt']
 print(features.head())
@@ -30,6 +30,7 @@ features.plot(subplots=True)
 # %%
 # Calculating mean and standard deviation
 TRAIN_SPLIT = 1593 #Around 80% of rows
+
 dataset = features.values
 data_mean = dataset[:TRAIN_SPLIT].mean(axis=0)
 data_std = dataset[:TRAIN_SPLIT].std(axis=0)
@@ -59,64 +60,83 @@ def multivariate_data(dataset, target, start_index, end_index, history_size,
 
 #%%
 # Setting parameters for our dataset
-past_history = 240 #using data from past 20 years
-future_target = 60 #predicting for next 5 years
+past_history = 1200 #using data from past 100 years (since 2015)
 STEP = 12           #How big the step: 1 year
 
-#Creating training data array
-x_train_single, y_train_single = multivariate_data(dataset, dataset[:, 1], 0,
-                                                   TRAIN_SPLIT, past_history,
-                                                   future_target, STEP,
-                                                   single_step=True)
-#Creating validation array 
-x_val_single, y_val_single = multivariate_data(dataset, dataset[:, 1], 
-                                               TRAIN_SPLIT, None, past_history,
-                                               future_target, STEP,
-                                               single_step=True) #Validation data
 
 # %%
-#View one data point from training set
-print ('Single window of past history : {}'.format(x_train_single[0].shape))
+#Multi-step model
+future_target = 60 #Predicting for next 5 years
+x_train_multi, y_train_multi = multivariate_data(dataset, dataset[:, 1], 0,
+                                                 TRAIN_SPLIT, past_history,
+                                                 future_target, STEP)
+x_val_multi, y_val_multi = multivariate_data(dataset, dataset[:, 1],
+                                             TRAIN_SPLIT, None, past_history,
+                                             future_target, STEP)
 
 # %%
-#shuffle, batch, and cache the dataset
+#Printing single window of past history
+print ('Single window of past history : {}'.format(x_train_multi[0].shape))
+print ('\n Target temperature to predict : {}'.format(y_train_multi[0].shape))
+
+# %%
+#Shuffle, batch, and cache the dataset
 BATCH_SIZE = 256
 BUFFER_SIZE = 10000
 
-train_data_single = tf.data.Dataset.from_tensor_slices((x_train_single, y_train_single))
-train_data_single = train_data_single.cache().shuffle(BUFFER_SIZE).batch(BATCH_SIZE).repeat()
+train_data_multi = tf.data.Dataset.from_tensor_slices((x_train_multi, y_train_multi))
+train_data_multi = train_data_multi.cache().shuffle(BUFFER_SIZE).batch(BATCH_SIZE).repeat()
 
-val_data_single = tf.data.Dataset.from_tensor_slices((x_val_single, y_val_single))
-val_data_single = val_data_single.batch(BATCH_SIZE).repeat()
-
-
-# %%
-#Using Long Short Term Memory (LTSM) in Recurrent Neural Network (RNN) to create model
-single_step_model = tf.keras.models.Sequential()
-single_step_model.add(tf.keras.layers.LSTM(32,
-                                           input_shape=x_train_single.shape[-2:]))
-single_step_model.add(tf.keras.layers.Dense(1))
-
-single_step_model.compile(optimizer=tf.keras.optimizers.RMSprop(), loss='mae')
-
+val_data_multi = tf.data.Dataset.from_tensor_slices((x_val_multi, y_val_multi))
+val_data_multi = val_data_multi.batch(BATCH_SIZE).repeat()
 
 # %%
-# Sample prediction
-for x, y in val_data_single.take(1):
-  print(single_step_model.predict(x).shape)
+#Function to plot multi-step model
+def create_time_steps(length):
+  return list(range(-length, 0))
+
+def multi_step_plot(history, true_future, prediction):
+  plt.figure(figsize=(12, 6))
+  num_in = create_time_steps(len(history))
+  num_out = len(true_future)
+
+  plt.plot(num_in, np.array(history[:, 1]), label='History')
+  plt.plot(np.arange(num_out)/STEP, np.array(true_future), 'bo',
+           label='True Future')
+  if prediction.any():
+    plt.plot(np.arange(num_out)/STEP, np.array(prediction), 'ro',
+             label='Predicted Future')
+  plt.legend(loc='upper left')
+  plt.show()
 
 # %%
-# Training Model
-EVALUATION_INTERVAL = 200 #Each epoch will run for 200 steps LIKELY WILL ADJUST
+#Plotting multi-step data
+for x, y in train_data_multi.take(1):
+  multi_step_plot(x[0], y[0], np.array([0]))
+
+# %%
+#Creating multi-step model using LTSM in RNN
+multi_step_model = tf.keras.models.Sequential()
+multi_step_model.add(tf.keras.layers.LSTM(32,
+                                          return_sequences=True,
+                                          input_shape=x_train_multi.shape[-2:]))
+multi_step_model.add(tf.keras.layers.LSTM(16, activation='relu'))
+multi_step_model.add(tf.keras.layers.Dense(120))
+
+multi_step_model.compile(optimizer=tf.keras.optimizers.RMSprop(clipvalue=1.0), loss='mae')
+
+# %%
+#Training model
+EVALUATION_INTERVAL = 200
 EPOCHS = 10
-single_step_history = single_step_model.fit(train_data_single, epochs=EPOCHS,
-                                            steps_per_epoch=EVALUATION_INTERVAL,
-                                            validation_data=val_data_single,
-                                            validation_steps=50)
 
+multi_step_history = multi_step_model.fit(train_data_multi, epochs=EPOCHS,
+                                          steps_per_epoch=EVALUATION_INTERVAL,
+                                          validation_data=val_data_multi,
+                                          validation_steps=50)
 
 # %%
-#Function to produce predictions using LTSM
+#Plotting model
 def plot_train_history(history, title):
   loss = history.history['loss']
   val_loss = history.history['val_loss']
@@ -132,47 +152,12 @@ def plot_train_history(history, title):
 
   plt.show()
 
+#Using function to plot model
+plot_train_history(multi_step_history, 'Multi-Step Training and validation loss')
 
 # %%
-#Plotting single-step training
-plot_train_history(single_step_history,
-                   'Single Step Training and validation loss')
+#Plotting multi-step model
+for x, y in val_data_multi.take(3):
+  multi_step_plot(x[0], y[0], multi_step_model.predict(x)[0])
 
 # %%
-#Functions to create time steps and show plots
-#Function to create time steps
-def create_time_steps(length):
-  return list(range(-length, 0))
-
-#Function to show plots
-def show_plot(plot_data, delta, title):
-  labels = ['History', 'True Future', 'Model Prediction']
-  marker = ['.-', 'rx', 'go']
-  time_steps = create_time_steps(plot_data[0].shape[0])
-  if delta:
-    future = delta
-  else:
-    future = 0
-
-  plt.title(title)
-  for i, x in enumerate(plot_data):
-    if i:
-      plt.plot(future, plot_data[i], marker[i], markersize=10,
-               label=labels[i])
-    else:
-      plt.plot(time_steps, plot_data[i].flatten(), marker[i], label=labels[i])
-  plt.legend()
-  plt.xlim([time_steps[0], (future+5)*2])
-  plt.xlabel('Time-Step')
-  return plt
-
-# %%
-#Plotting simple LTSM model
-for x, y in val_data_single.take(3):
-  plot = show_plot([x[0][:, 1].numpy(), y[0].numpy(),
-                    single_step_model.predict(x)[0]], 12,
-                   'Single Step Prediction')
-  plot.show()
-
-# %%
-#Will work on Multi-step model
