@@ -29,11 +29,14 @@ features.plot(subplots=True)
 
 # %%
 # Calculating mean and standard deviation
+# 1992 rows
 TRAIN_SPLIT = 1593 #Around 80% of rows
 
 dataset = features.values
 data_mean = dataset[:TRAIN_SPLIT].mean(axis=0)
 data_std = dataset[:TRAIN_SPLIT].std(axis=0)
+
+#Normalizing data
 dataset = (dataset-data_mean)/data_std
 
 # %%
@@ -60,7 +63,7 @@ def multivariate_data(dataset, target, start_index, end_index, history_size,
 
 #%%
 # Setting parameters for our dataset
-past_history = 1200 #using data from past 100 years (since 2015)
+past_history = 300 #using data from past 25 years (since 2015) there is a LIMIT to this
 STEP = 12           #How big the step: 1 year
 
 
@@ -121,7 +124,7 @@ multi_step_model.add(tf.keras.layers.LSTM(32,
                                           return_sequences=True,
                                           input_shape=x_train_multi.shape[-2:]))
 multi_step_model.add(tf.keras.layers.LSTM(16, activation='relu'))
-multi_step_model.add(tf.keras.layers.Dense(120))
+multi_step_model.add(tf.keras.layers.Dense(60)) #NEEDS to equal future target
 
 multi_step_model.compile(optimizer=tf.keras.optimizers.RMSprop(clipvalue=1.0), loss='mae')
 
