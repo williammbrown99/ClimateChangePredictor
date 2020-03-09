@@ -40,7 +40,7 @@ data_mean = dataset[:TRAIN_SPLIT].mean(axis=0) #Goes to row 2795 (10-1-1982)
 data_std = dataset[:TRAIN_SPLIT].std(axis=0)
 
 #Normalizing data
-#dataset = (dataset-data_mean)/data_std
+dataset = (dataset-data_mean)/data_std
 
 # %%
 # function to create multivariate data array
