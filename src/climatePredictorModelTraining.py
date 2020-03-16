@@ -23,6 +23,7 @@ print(climateChangeDf.head())
 
 #%%
 #Choosing features from data
+#Using these three features to predict future LandAverageTemperature values
 features_considered = ['LandAverageTemperature', 'LandMaxTemperature', 'LandMinTemperature']
 features = climateChangeDf[features_considered]
 features.index = climateChangeDf['dt']
@@ -42,18 +43,19 @@ data_mean = dataset[:TRAIN_SPLIT].mean(axis=0) #Goes to row 2795 (10-1-1982)
 data_std = dataset[:TRAIN_SPLIT].std(axis=0)
 
 #Normalizing data
+#Important for Neural Networks
 dataset = (dataset-data_mean)/data_std
 
 # %%
 # function to create multivariate data array
 def multivariate_data(dataset, target, start_index, end_index, history_size,
-                      target_size, step, single_step=False):
+                      target_size, step, single_step=False): 
   data = []
   labels = []
 
   start_index = start_index + history_size
   if end_index is None:
-    end_index = len(dataset) - target_size #Predicting from 2010 to 2015
+    end_index = len(dataset) - target_size #Predicting 2015
 
   for i in range(start_index, end_index):
     indices = range(i-history_size, i, step)
@@ -67,18 +69,23 @@ def multivariate_data(dataset, target, start_index, end_index, history_size,
   return np.array(data), np.array(labels)
 
 #%%
-# Setting parameters for our dataset
+# Setting history size and step size for our RNN
 past_history = 120 #using data from past 10 years (since 2015) there is a LIMIT to this
 STEP = 1           #How big the step: 1 month
 
 
 # %%
 #Creating training and validation sets
+# Potential target values:
+# dataset[:, 0] == LandAverageTemperature, Using this one
+# dataset[:, 1] == LandMaxTemperature
+# dataset[:, 2] == LandMinTemperature
+
 future_target = 12 #Predicting for next 1 year(s)
-x_train_multi, y_train_multi = multivariate_data(dataset, dataset[:, 1], 0,
+x_train_multi, y_train_multi = multivariate_data(dataset, dataset[:, 0], 0,
                                                  TRAIN_SPLIT, past_history,
                                                  future_target, STEP)
-x_val_multi, y_val_multi = multivariate_data(dataset, dataset[:, 1],
+x_val_multi, y_val_multi = multivariate_data(dataset, dataset[:, 0],
                                              TRAIN_SPLIT, None, past_history,
                                              future_target, STEP)
 
@@ -89,7 +96,7 @@ print ('\n Target temperature to predict : {}'.format(y_train_multi[0].shape))
 
 # %%
 #Shuffle, batch, and cache the dataset
-BATCH_SIZE = 256 #How many rows are gone through before updating model (WILL UPDATE)
+BATCH_SIZE = 32 #How many rows are gone through before updating model (WILL UPDATE)
 BUFFER_SIZE = 10000
 
 train_data_multi = tf.data.Dataset.from_tensor_slices((x_train_multi, y_train_multi))
@@ -118,12 +125,12 @@ def multi_step_plot(history, true_future, prediction):
   plt.show()
 
 # %%
-#Plotting averageTemperature data
+#Plotting Example of Training data
 for x, y in train_data_multi.take(1):
   multi_step_plot(x[0], y[0], np.array([0]))
 
 # %%
-#Creating multi-step model using LTSM in RNN
+#Creating multi-step RNN model with TWO LTSM layers
 multi_step_model = tf.keras.models.Sequential()
 multi_step_model.add(tf.keras.layers.LSTM(32,
                                           return_sequences=True,
@@ -145,12 +152,12 @@ multi_step_history = multi_step_model.fit(train_data_multi, epochs=EPOCHS,
 
 #%%
 #SAVE Model
-multi_step_model.save('my_model.h5')  # creates a HDF5 file 'my_model.h5'
+multi_step_model.save('landAverageTemperatureModel.h5')  # creates a HDF5 file 'my_model.h5'
 del multi_step_model  # deletes the existing model
 
 #%%
 #LOAD Model back in
-climateModel = tf.keras.models.load_model('my_model.h5')
+climateModel = tf.keras.models.load_model('landAverageTemperatureModel.h5')
 
 # %%
 #Plotting model training and validation loss
@@ -173,25 +180,12 @@ def plot_train_history(history, title):
 plot_train_history(multi_step_history, 'Multi-Step Training and validation loss')
 
 # %%
-#Plotting multi-step model for all features
+#Plotting Accuracy of Model
 for x, y in val_data_multi.take(3):
   multi_step_plot(x[0], y[0], climateModel.predict(x)[0])
 
-
 # %%
-#Testing
-#Mean Absolute Error
-#mae = mean_absolute_error(trueValues, predictedValues)
-print(climateModel.predict(x).shape) 
-trueValues = []
-predictedValues = []
-for x, y in val_data_multi.take(3):
-  trueValues.append(y[0])
-  predictedValues.append(climateModel.predict(x)[0])
-  break
+#ADD two: THIS is VERY USEFUL
+#climateChangeDf.loc[climateChangeDf['LandAverageTemperature'] == 4.075].index #
 
-print(trueValues)
-print(len(predictedValues))
-
-#print("Mean Absolute Error: %f" % mae)
 # %%
