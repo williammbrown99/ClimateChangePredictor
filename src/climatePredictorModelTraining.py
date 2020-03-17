@@ -1,7 +1,7 @@
 #%%
 #Imports
 from __future__ import absolute_import, division, print_function, unicode_literals
-from sklearn.metrics import mean_absolute_error
+from sklearn.metrics import mean_absolute_error, mean_squared_error, r2_score
 import tensorflow as tf # version 1.15.2
 tf.enable_eager_execution() #To fix error thrown
 
@@ -10,7 +10,7 @@ import matplotlib.pyplot as plt
 import numpy as np
 import os
 import pandas as pd
-import pickle
+import statistics
 
 #Used this LTSM tutorial often
 #https://www.tensorflow.org/tutorials/structured_data/time_series#part_2_forecast_a_multivariate_time_series
@@ -41,6 +41,10 @@ TRAIN_SPLIT = 1593 #Around 80% of rows
 dataset = features.values
 data_mean = dataset[:TRAIN_SPLIT].mean(axis=0) #Goes to row 2795 (10-1-1982)
 data_std = dataset[:TRAIN_SPLIT].std(axis=0)
+
+#WILL USE to unNormalize the LandAverageTemperature prediction
+landAvgTmp_mean = statistics.mean([x[0] for x in dataset[:TRAIN_SPLIT]])
+landAvgTmp_std = statistics.stdev([x[0] for x in dataset[:TRAIN_SPLIT]])
 
 #Normalizing data
 #Important for Neural Networks
@@ -187,5 +191,45 @@ for x, y in val_data_multi.take(3):
 # %%
 #ADD two: THIS is VERY USEFUL
 #climateChangeDf.loc[climateChangeDf['LandAverageTemperature'] == 4.075].index #
+
+# %%
+#Extracting Actual and Predicted Values
+for x, y in val_data_multi.take(1):
+  print(x.shape)
+  print(y.shape)
+  actualValues = np.array(y)
+  predictedValues = np.array(climateModel.predict(x))
+
+
+# %%
+#function to unNormalize LandAverageTemp data
+def unNormalize(data):
+  data = [(x * landAvgTmp_std + landAvgTmp_mean) for x in data]
+  return data
+
+# %%
+#unNormalizing Actual and Predicted Values
+#From range row 2915 to row 2957 (10-1-1992 to 4-1-1996)
+actualValues = unNormalize(actualValues)
+predictedValues = unNormalize(predictedValues)
+
+# %%
+#Printing Actual and Predicted Values
+print(actualValues)
+print(predictedValues)
+
+# %%
+#
+#climateChangeDf.loc[climateChangeDf['LandAverageTemperature'] == 9.353].index
+
+# %%
+#Calculating Error Metrics
+mae = mean_absolute_error(actualValues, predictedValues)
+mse = mean_squared_error(actualValues, predictedValues)
+r2 = r2_score(actualValues, predictedValues)
+
+print(mae)
+print(mse)
+print(r2)
 
 # %%
