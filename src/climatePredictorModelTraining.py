@@ -189,14 +189,11 @@ for x, y in val_data_multi.take(3):
   multi_step_plot(x[0], y[0], climateModel.predict(x)[0])
 
 # %%
-#ADD two: THIS is VERY USEFUL
-#climateChangeDf.loc[climateChangeDf['LandAverageTemperature'] == 4.075].index #
-
-# %%
 #Extracting Actual and Predicted Values
 for x, y in val_data_multi.take(1):
   print(x.shape)
   print(y.shape)
+  historyValues = np.array(x)
   actualValues = np.array(y)
   predictedValues = np.array(climateModel.predict(x))
 
@@ -219,17 +216,14 @@ print(actualValues)
 print(predictedValues)
 
 # %%
-#
-#climateChangeDf.loc[climateChangeDf['LandAverageTemperature'] == 9.353].index
-
-# %%
 #Calculating Error Metrics
 mae = mean_absolute_error(actualValues, predictedValues)
 mse = mean_squared_error(actualValues, predictedValues)
+#Value of 1 for r2 score is perfect
 r2 = r2_score(actualValues, predictedValues)
 
-print(mae)
-print(mse)
-print(r2)
+print('Mean Absolute Error: {}'.format(mae))
+print('Mean Squared Error: {}'.format(mse))
+print('R2 Score: {}'.format(r2))
 
 # %%
