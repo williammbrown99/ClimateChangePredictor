@@ -18,7 +18,7 @@ import statistics
 #%%
 #Create DataFrame
 #dropna() made df start on 1850-1-1 (row 1202), may change
-climateChangeDf = pd.read_csv('GlobalTemperatures.csv').dropna() #dropna() to drop nans
+climateChangeDf = pd.read_csv('INPUT/TRAIN/GlobalTemperatures.csv').dropna() #dropna() to drop nans
 print(climateChangeDf.head())
 
 #%%
@@ -156,12 +156,19 @@ multi_step_history = multi_step_model.fit(train_data_multi, epochs=EPOCHS,
 
 #%%
 #SAVE Model
+#Goes into folder MODEL
+os.chdir('MODEL')
+
 multi_step_model.save('landAverageTemperatureModel.h5')  # creates a HDF5 file 'my_model.h5'
+
+#Leaves folder MODEL
+os.chdir('..')
+
 del multi_step_model  # deletes the existing model
 
 #%%
 #LOAD Model back in
-climateModel = tf.keras.models.load_model('landAverageTemperatureModel.h5')
+climateModel = tf.keras.models.load_model('MODEL/landAverageTemperatureModel.h5')
 
 # %%
 #Plotting model training and validation loss

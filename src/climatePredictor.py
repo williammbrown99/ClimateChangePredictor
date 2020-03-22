@@ -3,11 +3,12 @@
 
 import tensorflow as tf # version 1.15.2
 import numpy as np
+import pandas as pd
 
 #%%
 #Create DataFrame
 #dropna() made df start on 1850-1-1 (row 1202), may change
-climateChangeDf = pd.read_csv('GlobalTemperatures.csv').dropna() #dropna() to drop nans
+climateChangeDf = pd.read_csv('INPUT/TRAIN/GlobalTemperatures.csv').dropna() #dropna() to drop nans
 print(climateChangeDf.head())
 
 #%%
@@ -41,7 +42,7 @@ dataset = (dataset-data_mean)/data_std
 
 #%%
 #LOAD Model In
-climateModel = tf.keras.models.load_model('landAverageTemperatureModel.h5')
+climateModel = tf.keras.models.load_model('MODEL/landAverageTemperatureModel.h5')
 
 # %%
 #function to unNormalize LandAverageTemp data
@@ -68,7 +69,7 @@ print(predictedLandAvgTemp2016)
 
 # %%
 #Printing Predicted Land Average Temperatures for 2016
-print('Predicted Land Average Temperature for 2016 in Celsius: \n')
+print('Predicted Land Average Temperature for 2016: \n')
 
 print('January: {}'.format(predictedLandAvgTemp2016[0][0]))
 print('February: {}'.format(predictedLandAvgTemp2016[0][1]))
