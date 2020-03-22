@@ -15,18 +15,21 @@ import statistics
 #Used this LTSM tutorial often
 #https://www.tensorflow.org/tutorials/structured_data/time_series#part_2_forecast_a_multivariate_time_series
 
+#OBTAINED dataset from:
+#https://www.ncdc.noaa.gov/cdo-web/search
+
 #%%
 #Create DataFrame
 #dropna() made df start on 1850-1-1 (row 1202), may change
-climateChangeDf = pd.read_csv('INPUT/TRAIN/GlobalTemperatures.csv').dropna() #dropna() to drop nans
+climateChangeDf = pd.read_csv('INPUT/TRAIN/NewOrleansTemperatures.csv').dropna() #dropna() to drop nans
 print(climateChangeDf.head())
 
 #%%
 #Choosing features from data
-#Using these three features to predict future LandAverageTemperature values
-features_considered = ['LandAverageTemperature', 'LandMaxTemperature', 'LandMinTemperature']
+#Using these three features to predict TAVG values
+features_considered = ['TAVG', 'TMAX', 'TMIN']
 features = climateChangeDf[features_considered]
-features.index = climateChangeDf['dt']
+features.index = climateChangeDf['DATE']
 print(features)
 
 #%%
@@ -35,14 +38,14 @@ features.plot(subplots=True)
 
 # %%
 # Calculating mean and standard deviation. Pre-processing data
-# 1992 rows
-TRAIN_SPLIT = 1593 #Around 80% of rows 
+# 866 rows
+TRAIN_SPLIT = 692 #Around 80% of rows 
 
 dataset = features.values
-data_mean = dataset[:TRAIN_SPLIT].mean(axis=0) #Goes to row 2795 (10-1-1982)
+data_mean = dataset[:TRAIN_SPLIT].mean(axis=0)
 data_std = dataset[:TRAIN_SPLIT].std(axis=0)
 
-#WILL USE to unNormalize the LandAverageTemperature prediction
+#WILL USE to unNormalize the TAVG prediction
 landAvgTmp_mean = statistics.mean([x[0] for x in dataset[:TRAIN_SPLIT]])
 landAvgTmp_std = statistics.stdev([x[0] for x in dataset[:TRAIN_SPLIT]])
 
@@ -74,18 +77,19 @@ def multivariate_data(dataset, target, start_index, end_index, history_size,
 
 #%%
 # Setting history size and step size for our RNN
-past_history = 120 #using data from past 10 years (since 2015) there is a LIMIT to this
-STEP = 1           #How big the step: 1 month
+past_history = 120 #using data from past 10 years to make prediction
+STEP = 1         #How big the step: 1 month
 
 
 # %%
 #Creating training and validation sets
 # Potential target values:
-# dataset[:, 0] == LandAverageTemperature, Using this one
-# dataset[:, 1] == LandMaxTemperature
-# dataset[:, 2] == LandMinTemperature
+# dataset[:, 0] == AverageTemperature, Using this one
+# dataset[:, 1] == MaxTemperature
+# dataset[:, 2] == MinTemperature
 
 future_target = 12 #Predicting for next 1 year(s)
+
 x_train_multi, y_train_multi = multivariate_data(dataset, dataset[:, 0], 0,
                                                  TRAIN_SPLIT, past_history,
                                                  future_target, STEP)
@@ -146,7 +150,7 @@ multi_step_model.compile(optimizer=tf.keras.optimizers.RMSprop(clipvalue=1.0), l
 
 # %%
 #Training model
-EVALUATION_INTERVAL = 200 #TRAIN_SPLIT #1593
+EVALUATION_INTERVAL = 200 #TRAIN_SPLIT #692
 EPOCHS = 10 #How many times the model runs over the dataset
 
 multi_step_history = multi_step_model.fit(train_data_multi, epochs=EPOCHS,
