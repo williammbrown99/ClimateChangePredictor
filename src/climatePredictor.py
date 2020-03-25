@@ -5,10 +5,11 @@ import tensorflow as tf # version 1.15.2
 import numpy as np
 import pandas as pd
 import statistics
+import os
 
 #%%
 #Create DataFrame
-climateChangeDf = pd.read_csv('INPUT/TRAIN/NewOrleansTemperatures.csv').dropna() #dropna() to drop nans
+climateChangeDf = pd.read_csv('src/INPUT/TRAIN/NewOrleansTemperatures.csv').dropna() #dropna() to drop nans
 
 #%%
 #Choosing features from data
@@ -41,7 +42,7 @@ dataset = (dataset-data_mean)/data_std
 
 #%%
 #LOAD Model In
-climateModel = tf.keras.models.load_model('MODEL/NewOrleansAverageTemperatureModel.h5')
+climateModel = tf.keras.models.load_model('src/MODEL/NewOrleansAverageTemperatureModel.h5')
 
 # %%
 #function to unNormalize LandAverageTemp data
@@ -54,6 +55,25 @@ def unNormalize(data):
 #Retrieving last 10 years of data (2009-2019)
 history2009_2019Values = dataset[-122:-2]
 
+#%%
+#Saving test data
+#Goes into INPUT/TEST folder
+os.chdir('src/INPUT/TEST')
+print(os.getcwd())
+'''
+with open("%s.csv" %searchKey, "w", newline = '') as csvfile:
+    writer = csv.writer(csvfile)
+    writer.writerow(header)
+    writer.writerow(studentData)
+os.chdir(path)
+'''
+#Returns to original directoy
+os.chdir('..')
+os.chdir('..')
+os.chdir('..')
+print(os.getcwd())
+
+#%%
 #Expanding dimension so the RNN can read it
 history2009_2019Values = np.expand_dims(history2009_2019Values, axis=0)
 print(history2009_2019Values.shape)
