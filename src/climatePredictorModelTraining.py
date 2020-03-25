@@ -2,7 +2,7 @@
 #Imports
 from __future__ import absolute_import, division, print_function, unicode_literals
 from sklearn.metrics import mean_absolute_error, mean_squared_error, r2_score
-import tensorflow as tf # version 1.15.2
+import tensorflow as tf     # version 1.15.2
 tf.enable_eager_execution() #To fix error thrown
 
 import matplotlib as mpl
@@ -20,7 +20,6 @@ import statistics
 
 #%%
 #Create DataFrame
-#dropna() made df start on 1850-1-1 (row 1202), may change
 climateChangeDf = pd.read_csv('INPUT/TRAIN/NewOrleansTemperatures.csv').dropna() #dropna() to drop nans
 print(climateChangeDf.head())
 
@@ -77,8 +76,8 @@ def multivariate_data(dataset, target, start_index, end_index, history_size,
 
 #%%
 # Setting history size and step size for our RNN
-past_history = 120 #using data from past 10 years to make prediction
-STEP = 1         #How big the step: 1 month
+past_history = 120  #using data from past 10 years to make prediction
+STEP = 1            #How big the step: 1 month
 
 
 # %%
@@ -88,7 +87,7 @@ STEP = 1         #How big the step: 1 month
 # dataset[:, 1] == MaxTemperature
 # dataset[:, 2] == MinTemperature
 
-future_target = 12 #Predicting for next 1 year(s)
+future_target = 36 #Predicting for next 3 year(s)
 
 x_train_multi, y_train_multi = multivariate_data(dataset, dataset[:, 0], 0,
                                                  TRAIN_SPLIT, past_history,
@@ -104,7 +103,7 @@ print ('\n Target temperature to predict : {}'.format(y_train_multi[0].shape))
 
 # %%
 #Shuffle, batch, and cache the dataset
-BATCH_SIZE = 32 #How many rows are gone through before updating model (WILL UPDATE)
+BATCH_SIZE = 12     #How many rows are gone through before updating model ADD NAME
 BUFFER_SIZE = 10000
 
 train_data_multi = tf.data.Dataset.from_tensor_slices((x_train_multi, y_train_multi))
@@ -144,26 +143,26 @@ multi_step_model.add(tf.keras.layers.LSTM(32,
                                           return_sequences=True,
                                           input_shape=x_train_multi.shape[-2:]))
 multi_step_model.add(tf.keras.layers.LSTM(16, activation='relu'))
-multi_step_model.add(tf.keras.layers.Dense(12)) #NEEDS to equal future target
+multi_step_model.add(tf.keras.layers.Dense(36)) #NEEDS to equal future target
 
 multi_step_model.compile(optimizer=tf.keras.optimizers.RMSprop(clipvalue=1.0), loss='mae')
 
 # %%
 #Training model
-EVALUATION_INTERVAL = 200 #TRAIN_SPLIT #692
-EPOCHS = 10 #How many times the model runs over the dataset
+EVALUATION_INTERVAL = 58  #TRAIN_SPLIT #692//12 = 57.667
+EPOCHS = 100               #How many times the model runs over the dataset
 
 multi_step_history = multi_step_model.fit(train_data_multi, epochs=EPOCHS,
                                           steps_per_epoch=EVALUATION_INTERVAL,
                                           validation_data=val_data_multi,
-                                          validation_steps=50)
+                                          validation_steps=15) #VALIDATION_SPLIT #174//12 = 14.5
 
 #%%
 #SAVE Model
 #Goes into folder MODEL
 os.chdir('MODEL')
 
-multi_step_model.save('landAverageTemperatureModel.h5')  # creates a HDF5 file 'my_model.h5'
+multi_step_model.save('NewOrleansAverageTemperatureModel.h5')  # creates a HDF5 file 'NewOrleansAverageTemperatureModel.h5'
 
 #Leaves folder MODEL
 os.chdir('..')
@@ -172,7 +171,7 @@ del multi_step_model  # deletes the existing model
 
 #%%
 #LOAD Model back in
-climateModel = tf.keras.models.load_model('MODEL/landAverageTemperatureModel.h5')
+climateModel = tf.keras.models.load_model('MODEL/NewOrleansAverageTemperatureModel.h5')
 
 # %%
 #Plotting model training and validation loss
@@ -210,14 +209,13 @@ for x, y in val_data_multi.take(1):
 
 
 # %%
-#function to unNormalize LandAverageTemp data
+#function to unNormalize TAVG data
 def unNormalize(data):
   data = [(x * landAvgTmp_std + landAvgTmp_mean) for x in data]
   return data
 
 # %%
 #unNormalizing Actual and Predicted Values
-#From range row 2915 to row 2957 (10-1-1992 to 4-1-1996)
 actualValues = unNormalize(actualValues)
 predictedValues = unNormalize(predictedValues)
 
@@ -228,9 +226,11 @@ print(predictedValues)
 
 # %%
 #Calculating Error Metrics
+#Mean absolute error = 0 is perfect
 mae = mean_absolute_error(actualValues, predictedValues)
+#Mean squared error takes outliers into account, making it larger than Mean absolute error
 mse = mean_squared_error(actualValues, predictedValues)
-#Value of 1 for r2 score is perfect
+#R2 score = 1 is perfect
 r2 = r2_score(actualValues, predictedValues)
 
 print('Mean Absolute Error: {}'.format(mae))

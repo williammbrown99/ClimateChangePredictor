@@ -4,16 +4,15 @@
 import tensorflow as tf # version 1.15.2
 import numpy as np
 import pandas as pd
+import statistics
 
 #%%
 #Create DataFrame
-#dropna() made df start on 1850-1-1 (row 1202), may change
 climateChangeDf = pd.read_csv('INPUT/TRAIN/NewOrleansTemperatures.csv').dropna() #dropna() to drop nans
-print(climateChangeDf.head())
 
 #%%
 #Choosing features from data
-#Using these three features to predict future LandAverageTemperature values
+#Using these three features to predict future TAVG values
 features_considered = ['TAVG', 'TMAX', 'TMIN']
 features = climateChangeDf[features_considered]
 features.index = climateChangeDf['DATE']
@@ -29,10 +28,10 @@ features.plot(subplots=True)
 TRAIN_SPLIT = 692 #Around 80% of rows 
 
 dataset = features.values
-data_mean = dataset[:TRAIN_SPLIT].mean(axis=0) #Goes to row 2795 (10-1-1982)
+data_mean = dataset[:TRAIN_SPLIT].mean(axis=0) 
 data_std = dataset[:TRAIN_SPLIT].std(axis=0)
 
-#WILL USE to unNormalize the LandAverageTemperature prediction
+#WILL USE to unNormalize the TAVG prediction
 landAvgTmp_mean = statistics.mean([x[0] for x in dataset[:TRAIN_SPLIT]])
 landAvgTmp_std = statistics.stdev([x[0] for x in dataset[:TRAIN_SPLIT]])
 
@@ -42,7 +41,7 @@ dataset = (dataset-data_mean)/data_std
 
 #%%
 #LOAD Model In
-climateModel = tf.keras.models.load_model('MODEL/landAverageTemperatureModel.h5')
+climateModel = tf.keras.models.load_model('MODEL/NewOrleansAverageTemperatureModel.h5')
 
 # %%
 #function to unNormalize LandAverageTemp data
@@ -60,27 +59,37 @@ history2009_2019Values = np.expand_dims(history2009_2019Values, axis=0)
 print(history2009_2019Values.shape)
 
 #Feeding data to RNN
-predictedLandAvgTemp2020 = climateModel.predict(history2009_2019Values)
+predictedTAVG = climateModel.predict(history2009_2019Values)
 
 # %%
-#UnNormalizing prediction for 2016
-predictedLandAvgTemp2020 = unNormalize(predictedLandAvgTemp2020)
-print(predictedLandAvgTemp2020)
+#UnNormalizing predictions
+predictedTAVG = unNormalize(predictedTAVG)
+print(predictedTAVG)
+
+#%%
+#function to print monthly temperatures
+def printMonthTemps(year, predictions):
+  print('Predicted Land Average Temperature for {}: \n'.format(year))
+
+  print('January: {}'.format(predictions[0]))
+  print('February: {}'.format(predictions[1]))
+  print('March: {}'.format(predictions[2]))
+  print('April: {}'.format(predictions[3]))
+  print('May: {}'.format(predictions[4]))
+  print('June: {}'.format(predictions[5]))
+  print('July: {}'.format(predictions[6]))
+  print('August: {}'.format(predictions[7]))
+  print('September: {}'.format(predictions[8]))
+  print('October: {}'.format(predictions[9]))
+  print('November: {}'.format(predictions[10]))
+  print('December: {}'.format(predictions[11]))
+
+  print('\n\n')
+
+#%%
+#Printing functions for 2020, 2021, and 2022
+printMonthTemps(2020, predictedTAVG[0][:12])
+printMonthTemps(2021, predictedTAVG[0][12:24])
+printMonthTemps(2022, predictedTAVG[0][24:36])
 
 # %%
-#Printing Predicted Land Average Temperatures for 2020
-print('Predicted Land Average Temperature for 2020: \n')
-
-print('January: {}'.format(predictedLandAvgTemp2020[0][0]))
-print('February: {}'.format(predictedLandAvgTemp2020[0][1]))
-print('March: {}'.format(predictedLandAvgTemp2020[0][2]))
-print('April: {}'.format(predictedLandAvgTemp2020[0][3]))
-print('May: {}'.format(predictedLandAvgTemp2020[0][4]))
-print('June: {}'.format(predictedLandAvgTemp2020[0][5]))
-print('July: {}'.format(predictedLandAvgTemp2020[0][6]))
-print('August: {}'.format(predictedLandAvgTemp2020[0][7]))
-print('September: {}'.format(predictedLandAvgTemp2020[0][8]))
-print('October: {}'.format(predictedLandAvgTemp2020[0][9]))
-print('November: {}'.format(predictedLandAvgTemp2020[0][10]))
-print('December: {}'.format(predictedLandAvgTemp2020[0][11]))
-
