@@ -155,7 +155,7 @@ EPOCHS = 100               #How many times the model runs over the dataset
 multi_step_history = multi_step_model.fit(train_data_multi, epochs=EPOCHS,
                                           steps_per_epoch=EVALUATION_INTERVAL,
                                           validation_data=val_data_multi,
-                                          validation_steps=15) #VALIDATION_SPLIT #174//12 = 14.5
+                                          validation_steps=15)  #VALIDATION_SPLIT #174//12 = 14.5
 
 #%%
 #SAVE Model
