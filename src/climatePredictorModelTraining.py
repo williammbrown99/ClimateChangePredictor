@@ -20,7 +20,7 @@ import statistics
 
 #%%
 #Create DataFrame
-climateChangeDf = pd.read_csv('src/INPUT/TRAIN/NewOrleansTemperatures.csv').dropna() #dropna() to drop nans
+climateChangeDf = pd.read_csv('INPUT/TRAIN/NewOrleansTemperatures.csv').dropna() #dropna() to drop nans
 print(climateChangeDf.head())
 
 #%%
@@ -160,19 +160,18 @@ multi_step_history = multi_step_model.fit(train_data_multi, epochs=EPOCHS,
 #%%
 #SAVE Model
 #Goes into folder MODEL
-os.chdir('src/MODEL')
+os.chdir('MODEL')
 
 multi_step_model.save('NewOrleansAverageTemperatureModel.h5')  # creates a HDF5 file 'NewOrleansAverageTemperatureModel.h5'
 
 #Returns to original directory
-os.chdir('..')
 os.chdir('..')
 
 del multi_step_model  # deletes the existing model
 
 #%%
 #LOAD Model back in
-climateModel = tf.keras.models.load_model('src/MODEL/NewOrleansAverageTemperatureModel.h5')
+climateModel = tf.keras.models.load_model('MODEL/NewOrleansAverageTemperatureModel.h5')
 
 # %%
 #Plotting model training and validation loss
