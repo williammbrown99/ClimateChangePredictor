@@ -102,30 +102,25 @@ predictedTAVG = climateModel.predict(testDataset)
 #UnNormalizing predictions
 predictedTAVG = unNormalize(predictedTAVG)
 
-#%%
-#function to print monthly temperatures
-def printMonthTemps(year, predictions):
-  print('Predicted Land Average Temperature for {}: \n'.format(year))
+# %%
+#Saving Test Results
+prediction_dict = {'January':[predictedTAVG[0][0], predictedTAVG[0][12], predictedTAVG[0][24]],\
+            'February':[predictedTAVG[0][1], predictedTAVG[0][13], predictedTAVG[0][25]],\
+            'March':[predictedTAVG[0][2], predictedTAVG[0][14], predictedTAVG[0][26]],\
+            'April':[predictedTAVG[0][3], predictedTAVG[0][15], predictedTAVG[0][27]],\
+            'May':[predictedTAVG[0][4], predictedTAVG[0][16], predictedTAVG[0][28]],\
+            'June':[predictedTAVG[0][5], predictedTAVG[0][17], predictedTAVG[0][29]],\
+            'July':[predictedTAVG[0][6], predictedTAVG[0][18], predictedTAVG[0][30]],\
+            'August':[predictedTAVG[0][7], predictedTAVG[0][19], predictedTAVG[0][31]],\
+            'September':[predictedTAVG[0][8], predictedTAVG[0][20], predictedTAVG[0][32]],\
+            'October':[predictedTAVG[0][9], predictedTAVG[0][21], predictedTAVG[0][33]],\
+            'November':[predictedTAVG[0][10], predictedTAVG[0][22], predictedTAVG[0][34]],\
+            'December':[predictedTAVG[0][11], predictedTAVG[0][23], predictedTAVG[0][35]]} 
+  
+testResults = pd.DataFrame(prediction_dict, index =['2020', '2021', '2022']) 
 
-  print('January: {}'.format(predictions[0]))
-  print('February: {}'.format(predictions[1]))
-  print('March: {}'.format(predictions[2]))
-  print('April: {}'.format(predictions[3]))
-  print('May: {}'.format(predictions[4]))
-  print('June: {}'.format(predictions[5]))
-  print('July: {}'.format(predictions[6]))
-  print('August: {}'.format(predictions[7]))
-  print('September: {}'.format(predictions[8]))
-  print('October: {}'.format(predictions[9]))
-  print('November: {}'.format(predictions[10]))
-  print('December: {}'.format(predictions[11]))
+#Printing Predictions  
+print(testResults)
 
-  print('\n\n')
-
-#%%
-#Printing functions for 2020, 2021, and 2022
-printMonthTemps(2020, predictedTAVG[0][:12])
-printMonthTemps(2021, predictedTAVG[0][12:24])
-printMonthTemps(2022, predictedTAVG[0][24:36])
-
+testResults.to_csv('OUTPUT/NewOrleansTAVGPredictions.csv', index = True, header=True)
 # %%
