@@ -1,5 +1,8 @@
 #%%
 #Imports
+from pandas.plotting import register_matplotlib_converters
+register_matplotlib_converters()
+
 import tensorflow as tf # version 1.15.2
 import numpy as np
 import pandas as pd
@@ -46,7 +49,6 @@ testDataDf = pd.read_csv('INPUT/TEST/NewOrleansTemperatures2010-2019.csv')
 testFeatures_considered = ['TAVG', 'TMAX', 'TMIN']
 testFeatures = testDataDf[features_considered]
 testFeatures.index = testDataDf['DATE']
-print(testFeatures)
 
 #%%
 #Plotting Data
@@ -68,6 +70,7 @@ axs[2].set_title('New Orleans Minimum Temperature')
 axs[2].set_ylabel('Temperature {}'.format(u'\u2103'))
 
 fig.tight_layout()
+#Must close plot window to continue running code
 plt.show()
 
 # %%
@@ -93,7 +96,6 @@ def unNormalize(data):
 
 #Expanding dimension so the RNN can read it
 testDataset = np.expand_dims(testDataset, axis=0)
-print(testDataset.shape)
 
 #Feeding data to RNN
 predictedTAVG = climateModel.predict(testDataset)
@@ -119,8 +121,12 @@ prediction_dict = {'January':[predictedTAVG[0][0], predictedTAVG[0][12], predict
   
 testResults = pd.DataFrame(prediction_dict, index =['2020', '2021', '2022']) 
 
-#Printing Predictions  
+#%%
+#Printing Predictions 
+print('Average Temperature Predictions for 2020, 2021, and 2022:\n') 
 print(testResults)
 
+#%%
+#SAVING Test Results
 testResults.to_csv('OUTPUT/NewOrleansTAVGPredictions.csv', index = True, header=True)
 # %%

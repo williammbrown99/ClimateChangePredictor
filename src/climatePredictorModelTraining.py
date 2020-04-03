@@ -21,7 +21,6 @@ import statistics
 #%%
 #Create DataFrame
 climateChangeDf = pd.read_csv('INPUT/TRAIN/NewOrleansTemperatures.csv').dropna() #dropna() to drop nans
-print(climateChangeDf.head())
 
 #%%
 #Choosing features from data
@@ -29,7 +28,6 @@ print(climateChangeDf.head())
 features_considered = ['TAVG', 'TMAX', 'TMIN']
 features = climateChangeDf[features_considered]
 features.index = climateChangeDf['DATE']
-print(features)
 
 #%%
 #Plotting Data
@@ -98,8 +96,8 @@ x_val_multi, y_val_multi = multivariate_data(dataset, dataset[:, 0],
 
 # %%
 #Printing single window of past history
-print ('Single window of past history : {}'.format(x_train_multi[0].shape))
-print ('\n Target temperature to predict : {}'.format(y_train_multi[0].shape))
+#print ('Single window of past history : {}'.format(x_train_multi[0].shape))
+#print ('\n Target temperature to predict : {}'.format(y_train_multi[0].shape))
 
 # %%
 #Shuffle, batch, and cache the dataset
@@ -150,7 +148,7 @@ multi_step_model.compile(optimizer=tf.keras.optimizers.RMSprop(clipvalue=1.0), l
 # %%
 #Training model
 EVALUATION_INTERVAL = 58  #TRAIN_SPLIT #692//12 = 57.667
-EPOCHS = 100               #How many times the model runs over the dataset
+EPOCHS = 100              #How many times the model runs over the dataset
 
 multi_step_history = multi_step_model.fit(train_data_multi, epochs=EPOCHS,
                                           steps_per_epoch=EVALUATION_INTERVAL,
@@ -201,12 +199,9 @@ for x, y in val_data_multi.take(3):
 # %%
 #Extracting Actual and Predicted Values
 for x, y in val_data_multi.take(1):
-  print(x.shape)
-  print(y.shape)
   historyValues = np.array(x)
   actualValues = np.array(y)
   predictedValues = np.array(climateModel.predict(x))
-
 
 # %%
 #function to unNormalize TAVG data
@@ -218,11 +213,6 @@ def unNormalize(data):
 #unNormalizing Actual and Predicted Values
 actualValues = unNormalize(actualValues)
 predictedValues = unNormalize(predictedValues)
-
-# %%
-#Printing Actual and Predicted Values
-print(actualValues)
-print(predictedValues)
 
 # %%
 #Calculating Error Metrics
