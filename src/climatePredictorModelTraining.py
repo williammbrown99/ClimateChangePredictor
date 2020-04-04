@@ -19,13 +19,13 @@ import statistics
 #https://www.ncdc.noaa.gov/cdo-web/search
 
 #%%
-#Create DataFrame
-climateChangeDf = pd.read_csv('INPUT/TRAIN/NewOrleansTemperatures.csv').dropna() #dropna() to drop nans
+#Create DataFrame, Starts in 1990
+climateChangeDf = pd.read_csv('INPUT/TRAIN/NewOrleansData.csv').dropna() #dropna() to drop nans
 
 #%%
 #Choosing features from data
-#Using these three features to predict TAVG values
-features_considered = ['TAVG', 'TMAX', 'TMIN']
+#Using these three features to predict TAVG values (Average Temperature, Average Wind Speed, Precipitation)
+features_considered = ['TAVG', 'AWND', 'PRCP']
 features = climateChangeDf[features_considered]
 features.index = climateChangeDf['DATE']
 
@@ -35,8 +35,8 @@ features.plot(subplots=True)
 
 # %%
 # Calculating mean and standard deviation. Pre-processing data
-# 866 rows
-TRAIN_SPLIT = 692 #Around 80% of rows 
+# 432 rows
+TRAIN_SPLIT = 346 #Around 80% of rows, 432 * 0.8 = 345.6
 
 dataset = features.values
 data_mean = dataset[:TRAIN_SPLIT].mean(axis=0)
@@ -56,10 +56,10 @@ def multivariate_data(dataset, target, start_index, end_index, history_size,
                       target_size, step, single_step=False): 
   data = []
   labels = []
-
-  start_index = start_index + history_size
+                                           # IMPORTANT:
+  start_index = start_index + history_size #Validation start index, 346 + 36 = 382, NEEDS to be under end index, 396
   if end_index is None:
-    end_index = len(dataset) - target_size #Predicting 2015
+    end_index = len(dataset) - target_size #Validation end index = 432 - 36 = 396
 
   for i in range(start_index, end_index):
     indices = range(i-history_size, i, step)
@@ -74,16 +74,15 @@ def multivariate_data(dataset, target, start_index, end_index, history_size,
 
 #%%
 # Setting history size and step size for our RNN
-past_history = 120  #using data from past 10 years to make prediction
-STEP = 1            #How big the step: 1 month
-
+past_history = 36  #using data from past 3 years to make prediction, LIMIT
+STEP = 1           #How big the step: 1 Month
 
 # %%
 #Creating training and validation sets
 # Potential target values:
 # dataset[:, 0] == AverageTemperature, Using this one
-# dataset[:, 1] == MaxTemperature
-# dataset[:, 2] == MinTemperature
+# dataset[:, 1] == AverageWindSpeed
+# dataset[:, 2] == Precipitation
 
 future_target = 36 #Predicting for next 3 year(s)
 
@@ -147,13 +146,13 @@ multi_step_model.compile(optimizer=tf.keras.optimizers.RMSprop(clipvalue=1.0), l
 
 # %%
 #Training model
-EVALUATION_INTERVAL = 58  #TRAIN_SPLIT #692//12 = 57.667
-EPOCHS = 100              #How many times the model runs over the dataset
+EVALUATION_INTERVAL = 29  #TRAIN_SPLIT//BATCH_SIZE #346//12 = 28.83
+EPOCHS = 50               #How many times the model runs over the dataset
 
 multi_step_history = multi_step_model.fit(train_data_multi, epochs=EPOCHS,
                                           steps_per_epoch=EVALUATION_INTERVAL,
                                           validation_data=val_data_multi,
-                                          validation_steps=15)  #VALIDATION_SPLIT #174//12 = 14.5
+                                          validation_steps=8)  #VALIDATION_SPLIT//BATCH_SIZE #86//12 = 7.17
 
 #%%
 #SAVE Model

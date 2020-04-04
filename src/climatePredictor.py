@@ -14,16 +14,16 @@ import os
 
 #%%
 #Create DataFrame
-climateChangeDf = pd.read_csv('INPUT/TRAIN/NewOrleansTemperatures.csv').dropna() #dropna() to drop nans
+climateChangeDf = pd.read_csv('INPUT/TRAIN/NewOrleansData.csv').dropna() #dropna() to drop nans
 
 #%%
 #Calculations to unNormalize prediction
-features_considered = ['TAVG', 'TMAX', 'TMIN']
+features_considered = ['TAVG', 'AWND', 'PRCP']
 features = climateChangeDf[features_considered]
 features.index = climateChangeDf['DATE']
 
-# 866 rows
-TRAIN_SPLIT = 692 #Around 80% of rows 
+# 432 rows
+TRAIN_SPLIT = 346 #Around 80% of rows 
 
 #WILL USE to normalize test data
 dataset = features.values
@@ -36,17 +36,17 @@ landAvgTmp_std = statistics.stdev([x[0] for x in dataset[:TRAIN_SPLIT]])
 
 #%%
 #Saving test data
-newOrleansTemp2010_2019df = climateChangeDf[-122: -2]
-newOrleansTemp2010_2019df.to_csv (r'INPUT/TEST/NewOrleansTemperatures2010-2019.csv', index = False, header=True)
+newOrleansTemp2010_2019df = climateChangeDf[-36:] #2019, 2018, 2017
+newOrleansTemp2010_2019df.to_csv (r'INPUT/TEST/NewOrleansData2010-2019.csv', index = False, header=True)
 
 #%%
 #Read test data back in
-testDataDf = pd.read_csv('INPUT/TEST/NewOrleansTemperatures2010-2019.csv')
+testDataDf = pd.read_csv('INPUT/TEST/NewOrleansData2010-2019.csv')
 
 #%%
 #Choosing features from data
 #Using these three features to predict future TAVG values
-testFeatures_considered = ['TAVG', 'TMAX', 'TMIN']
+testFeatures_considered = ['TAVG', 'AWND', 'PRCP']
 testFeatures = testDataDf[features_considered]
 testFeatures.index = testDataDf['DATE']
 
@@ -57,17 +57,17 @@ testFeatures.index = testDataDf['DATE']
 dates = mdates.num2date(mdates.datestr2num(testFeatures.index))
 
 fig, axs = plt.subplots(3)
-axs[0].plot(dates, testFeatures['TMAX'], color = 'red')
-axs[0].set_title('New Orleans Maximum Temperature')
-axs[0].set_ylabel('Temperature {}'.format(u'\u2103'))
+axs[0].plot(dates, testFeatures['AWND'], color = 'red')
+axs[0].set_title('New Orleans Average Wind Speed')
+axs[0].set_ylabel('Wind Speed {}'.format('km/h'))
 
 axs[1].plot(dates, testFeatures['TAVG'], color = 'purple')
 axs[1].set_title('New Orleans Average Temperature')
 axs[1].set_ylabel('Temperature {}'.format(u'\u2103'))
 
-axs[2].plot(dates, testFeatures['TMIN'], color = 'blue')
+axs[2].plot(dates, testFeatures['PRCP'], color = 'blue')
 axs[2].set_title('New Orleans Minimum Temperature')
-axs[2].set_ylabel('Temperature {}'.format(u'\u2103'))
+axs[2].set_ylabel('Precipitation {}'.format('mm'))
 
 fig.tight_layout()
 #Must close plot window to continue running code
@@ -92,7 +92,7 @@ def unNormalize(data):
   return data
 
 # %%
-#Predicting LandAvgTemp for 2020 (UNKNOWN VALUES)
+#Predicting TAVG for 2020 (UNKNOWN VALUES)
 
 #Expanding dimension so the RNN can read it
 testDataset = np.expand_dims(testDataset, axis=0)
