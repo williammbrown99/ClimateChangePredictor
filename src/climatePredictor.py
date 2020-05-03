@@ -37,11 +37,11 @@ landAvgTmp_std = statistics.stdev([x[0] for x in dataset[:TRAIN_SPLIT]])
 #%%
 #Saving test data
 newOrleansTemp2010_2019df = climateChangeDf[-36:] #2019, 2018, 2017
-newOrleansTemp2010_2019df.to_csv (r'INPUT/TEST/NewOrleansData2010-2019.csv', index = False, header=True)
+newOrleansTemp2010_2019df.to_csv (r'INPUT/TEST/NewOrleansData2017-2019.csv', index = False, header=True)
 
 #%%
 #Read test data back in
-testDataDf = pd.read_csv('INPUT/TEST/NewOrleansData2010-2019.csv')
+testDataDf = pd.read_csv('INPUT/TEST/NewOrleansData2017-2019.csv')
 
 #%%
 #Choosing features from data
@@ -66,7 +66,7 @@ axs[1].set_title('New Orleans Average Temperature')
 axs[1].set_ylabel('Temperature {}'.format(u'\u2103'))
 
 axs[2].plot(dates, testFeatures['PRCP'], color = 'blue')
-axs[2].set_title('New Orleans Minimum Temperature')
+axs[2].set_title('New Orleans Precipitation')
 axs[2].set_ylabel('Precipitation {}'.format('mm'))
 
 fig.tight_layout()
